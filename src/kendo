@@ -1,0 +1,408 @@
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+
+<c:url var="sessionsList" value="" />
+<c:url var="markerPassMarkHome" value="/markerPassMark" />
+<c:url var="sessionSubjectUrl" value="" />
+<c:url var="sessionSubjectVariantUrl" value="" />	
+<c:url var="resultConverstionJobUrl" value="" />
+<c:url var="updateMarkerPassMarkAdjustment" value="" />
+
+	<script type="text/javascript">
+	
+	var notification = $("#notification").kendoNotification({ 
+		templates: [{
+            type: "error",
+            template: $("#errorTemplate").html()
+        },{
+            type: "success",
+            template: $("#successTemplate").html()
+        }
+        ],			
+        animation: false,
+		appendTo: "#notification",
+		hideOnClick: true,
+        autoHideAfter: 0,
+        height: 50,               
+    }).data("kendoNotification");
+	
+	var currentSessionKey = "${currentSessionKey}";
+	
+	function getSelectedSessionKey() {
+		
+		var dropdownSession = $('#dropdownSession');
+		if(dropdownSession && dropdownSession.val()){
+			
+			return  dropdownSession.val();
+		}
+		return currentSessionKey;
+	}
+	
+	function onChangeSession(){
+		$(location).attr('href', removeJsessionID("${markerPassMarkHome}")  + "/" + $('#dropdownSession').val());
+	}
+	
+		
+    $(document).ready(function() {
+    
+    
+    	// Create data source for session
+    	var dataSourceSession = new kendo.data.DataSource({
+    		transport: {
+    			 read: {			    				    	
+    				 url : removeJsessionID("${sessionsList}"),
+    				dataType: "json"
+    			 }
+    		},
+			error: function(e) {
+				
+				if(e.xhr != null && e.xhr.status == 401) {
+                    // Will go to ajaxSetup method in header.jsp
+             	}
+			}    		
+    	});
+    	
+    	// Exam session drop down
+		// Create kendoDropDownList for session and load values from datasource
+		$("#dropdownSession").kendoDropDownList({
+
+			// Assign data source
+			dataSource : dataSourceSession,
+
+			dataTextField : "formattedSessionKey",
+			dataValueField : "sessionKey",
+			value: currentSessionKey,
+			change: onChangeSession,
+            enable: true,
+            index : 0
+		});
+    	
+		var sessionSubjectDS = new kendo.data.DataSource({
+			transport : {
+				read : {
+					dataType : "json",
+					url: removeJsessionID("${sessionSubjectUrl}" + currentSessionKey)				
+				}
+			}
+		});
+		
+		$("#dropdownSessionSubject").kendoDropDownList({
+		   dataTextField : "subjectCodeNameAndFormat",
+           dataValueField : "sessionSubjectId",
+		   dataSource : sessionSubjectDS,
+		   select: function(e) {
+			   var dataItem = this.dataItem(e.item.index());
+               loadVariant(dataItem.sessionSubjectId);
+           },
+		   dataBound: function(e) {
+			  loadVariant($("#dropdownSessionSubject").data("kendoDropDownList").dataItem().sessionSubjectId);
+           },
+           index: 0
+		});
+		/* var subVariantDS = new kendo.data.DataSource({
+			transport : {
+				read : {
+					dataType : "json",
+					url: removeJsessionID("${sessionSubjectVariantUrl}" + "10478")				
+				}
+			},
+		 schema: {data : "listSessionSubjectVariants"}
+		}); */
+		 function loadVariant(sessionSubjectId) {
+     	    
+             var variantData = $("#dropdownSessionSubjectVariant").data("kendoDropDownList");
+             
+             if(variantData) {
+            	 variantData.setDataSource([]);
+                 variantData.setDataSource(getSubjectVariantDS(sessionSubjectId));                       
+             }
+         }
+		 function getSubjectVariantDS(sessionSubjectId) {
+                 subjectVariantDS = new kendo.data.DataSource({
+                     transport: {
+                         read: {
+                             url: removeJsessionID("${sessionSubjectVariantUrl}" + sessionSubjectId),
+                             dataType: "json"
+                         }
+                     },
+                     schema: {data : "listSessionSubjectVariants"}
+                 });
+             
+             return subjectVariantDS;
+         }
+		$("#dropdownSessionSubjectVariant").kendoDropDownList({
+
+        	dataTextField : "examSubjectVariant.variant.description",
+            dataValueField : "id",
+           // dataSource : subVariantDS,
+          	dataBound: function(e) {
+				
+	           }, 
+            index : 0
+        });
+		
+		var grid = $("#markingTeamGrid").kendoGrid({
+		    		
+		    		navigatable: true,
+		           // dataSource: getResponseDetailsDS($("dropdownSessionSubjectVariant").val()),
+				   dataSource:getResponseDetailsDS("3456"),
+					pageable : {
+		                pageSize: 10,
+		                pageSizes: [5,10,25,50,250],
+		                buttonCount: 3,
+		                info: false,
+		                previousNext: true,
+		                messages: {
+		                    itemsPerPage: "per page",
+		                    previous: "Prev",
+		                    next: "Next"
+		                }       
+		            },
+					resizable: true,
+					scrollable: false,
+					sortable: true,
+		            filterable : {
+						extra : false
+					},
+					autoBind: false,
+					dataBound: function(e){
+		                
+		                var dataSource = this.dataSource;
+		                var state = kendo.stringify({
+		                    page: dataSource.page(),
+		                    pageSize: dataSource.pageSize()
+		                });
+		                $.cookie("markerPassMarkListState",state);
+		            },
+		           columns : [
+							{
+								field : "markingTeamMemberId",
+								title : "Marker ID",
+								sortable : true,
+								filterable : true,
+								footerTemplate : "Marker ID"
+							},
+							{
+								field : "markerName",
+								title : "Marker Name",
+								sortable : true,
+								filterable : true,
+								footerTemplate : "Marker Name"
+							},
+							{
+								field : "golbalPassMark",
+								title : "Global Pass Mark",
+								sortable : false,
+								filterable : false,
+								footerTemplate : "Global Pass Mark"
+							},
+							{
+								field : "passMarkAdjustment",
+								title : "Adjustment",
+								sortable : false,
+								filterable : false,
+								footerTemplate : "Adjustment"
+							},
+							{
+								field : "markerPassMark",
+								title : "Marker Pass Mark",
+								sortable : false,
+								filterable : false,
+								footerTemplate : "Marker Pass Mark"
+							} ],
+							editable: true
+		        }).data("kendoGrid");
+    	
+		var state = null;
+   		var listStateFromCookie = $.cookie("markerPassMarkListState");
+   		if(listStateFromCookie){
+   			state = JSON.parse(listStateFromCookie);	
+   		}
+   		
+        if(state) {
+        	grid.dataSource.query(state);
+        } else {
+        	grid.dataSource.read();
+        }
+     // Cancel button click
+		$("#btnCancel").on('click',	function() {
+			var sessionSubVariantId=$("#dropdownSessionSubjectVariant").val();
+        	console.log("sessionSubVariantId "+sessionSubVariantId);
+        	if(sessionSubVariantId){
+            grid.setDataSource(getResponseDetailsDS(sessionSubVariantId));
+            grid.refresh();
+            grid.dataSource.read(); 
+        	}
+		});	
+    }); // End of ready
+    
+    // Remove appending jsessionID from URL
+	function removeJsessionID(inputURL) {
+		
+		var formattedURL = inputURL;
+		
+		if(inputURL.lastIndexOf("/;") > 0) {
+			formattedURL = inputURL.substring(0, inputURL.lastIndexOf("/;") + 1);
+		}
+		return formattedURL;
+	}
+    
+ 	// To validate only numbers
+	function isNumber(evt) {
+		evt = (evt) ? evt : window.event;
+	    var charCode = (evt.which) ? evt.which : evt.keyCode;
+	    if (charCode > 31 && ( (charCode < 48) || (charCode > 57) ) )
+	    {
+	        return false;
+	    }
+	    return true;
+	}
+	
+	function getResponseDetailsDS(sessionSubVariantId) {
+		
+		var responseDetailsDS = new kendo.data.DataSource({
+			//type: "odata",  
+            transport: {
+                read: {
+                    url: "${resultConverstionJobUrl}" + sessionSubVariantId,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json"
+                }
+            },
+            pageSize: 10,
+            page:1,
+            schema: {
+            	model: {
+					id: "markingTeamMemberId",
+					fields: {
+						markingTeamMemberId: { type: "long",editable: false },
+						accaId:{type: "string",editable: false},
+						markerName:{type: "string" ,editable: false},
+						golbalPassMark: { type: "object",editable: false },
+						passMarkAdjustment: { type: "number",defaultValue: 0, validation: { required: true } },
+						markerPassMark:{type: "object",editable: false}
+					}
+				},
+            },
+            change: function(e){
+                if (e.action === "itemchange" && e.field !== "markerPassMark"){
+                  	var model = e.items[0],
+                        type = model.Type,
+                        currentValue = model.golbalPassMark + model.passMarkAdjustment;
+                   if (currentValue !== model.markerPassMark) {
+                     	model.markerPassMark = currentValue;
+                     	$("#markingTeamGrid").find("tr[data-uid='" + model.uid + "'] td:eq(4)").text(currentValue);                     	
+				   }
+				}
+		      },
+            error: function(args) {
+				if(args.xhr != null && args.xhr.status == 401) {
+                    // Will go to ajaxSetup method in header.jsp
+             	}
+				else {
+             	notification.show({message: args.errors}, "error");
+         	    }                	
+            }
+        });
+		
+		return responseDetailsDS;
+	}
+	function submitForm(){
+		$.ajax({
+			url: removeJsessionID("${updateMarkerPassMarkAdjustment}"),
+			data: kendo.stringify($("#markingTeamGrid").data("kendoGrid").dataSource.view()),
+			type: "POST",
+			beforeSend: function(xhr) {
+				xhr.setRequestHeader("Accept", "application/json");
+				xhr.setRequestHeader("Content-Type", "application/json");
+			},
+			success : function(data, status, jqXHR) {
+			
+			}
+		});
+	}
+ 	</script>
+ 
+<div class="session-row" id="divHeaderSession">
+    <div class="container">
+        <div class="sessionSelect">
+            <input id="dropdownSession"/>
+        </div>                     
+    </div>
+    <input type="hidden" value="${currentSessionKey}" id="currentSessionId">
+</div>
+<div class="container">
+
+	<div class="row">
+		<div class="col-md-10">
+			<div class="acca-h2">
+				<h2>
+					<span id="spanTitle"><spring:message code="marker.pass.mark.label"/></span>
+				</h2>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Session Subject -->
+	<div class="form-group">
+		<div class="acca-label-container col-sm-2">
+			<label for="default2" class="acca-label"> <spring:message code="prizes.addedit.regional.subject.label"/> </label>
+		</div>
+		<div class="acca-no-col-padding col-sm-7">
+			<div id="divSubject">
+				<input id="dropdownSessionSubject" />
+			</div>
+		</div>
+	</div>
+	<div class="form-group">
+		<div class="acca-label-container col-sm-2">
+		</div>
+		<div class="acca-no-col-padding col-sm-11">
+		</div>
+	</div>
+	<!-- Session Subject Variant -->
+	<div class="form-group">
+		<div class="acca-label-container col-sm-2">
+			<label for="default2" class="acca-label"> <spring:message code="prizes.addedit.regional.variant.label"/> </label>
+		</div>
+		<div class="acca-no-col-padding col-sm-7">
+			<div id="divVariant">
+				<input id="dropdownSessionSubjectVariant" />
+			</div>
+		</div>
+	</div>
+	
+	 <div class="form-group">	
+   <div class="row" style=" margin-top: 114px; ">
+        <div class="col-md-8 col-lg-8">
+			<div class="acca-legend-container">
+				<legend class="acca-legend"></legend>
+			</div>
+        </div>
+        <!-- Buttons -->
+        <div class="col-md-2 col-lg-2">
+            <button type="button" id="btnSubmit" name="btnSubmit" onclick="submitForm()" class="acca-btn acca-btn-primary">
+				Save
+			</button>
+        </div>
+         <div class="col-md-2 col-lg-2">
+            <button type="button" id="btnCancel" name="btnCancel" class="acca-btn acca-btn-negative">
+				Cancel
+			</button>
+        </div>
+    </div>
+    </div>
+    <div class="form-group">							
+		
+		<div class="row">
+			<div class="col-md-9">
+				<div class="table">
+					<div id="markingTeamGrid"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>	
