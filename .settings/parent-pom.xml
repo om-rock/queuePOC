@@ -1,0 +1,144 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.dfggg.reports</groupId>
+	<artifactId>reports-middletier-parent</artifactId>
+	<version>1.0.0.0</version>
+	<packaging>pom</packaging>
+	<name>ReportEngine MiddleTier Parent</name>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.4.0.RELEASE</version>
+	</parent>
+
+	<modules>
+		<module>../acca-reports-dtos</module>
+		<module>../acca-reports-integration</module>
+		<module>../acca-reports-integrationsrv</module>
+		<module>../acca-reports-global-constants</module>
+		<module>../acca-reports-model</module>
+		<module>../acca-reports-security</module>
+		<module>../acca-reports-util</module>
+		<module>../acca-reports-validation</module>
+	</modules>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- Java -->
+		<java.version>1.7</java.version>
+		<!-- Maven Plugins -->
+		<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>
+		<maven-ear-plugin>2.8</maven-ear-plugin>
+		<maven-checkstyle-plugin>2.9.1</maven-checkstyle-plugin>
+
+		<!-- Custom -->
+		<cglig-version>2.2.2</cglig-version>
+		<cglib-nodep-version>3.1</cglib-nodep-version>
+		<org.apache.xmlbeans-version>2.5.0</org.apache.xmlbeans-version>
+		<commons-lang-version>2.6</commons-lang-version>
+		<commons-fileupload>1.2.2</commons-fileupload>
+		<commons-io>20030203.000550</commons-io>
+		<commonj-sdo>2.1.0</commonj-sdo>
+		<jaxb-xercesImpl-version>1.5</jaxb-xercesImpl-version>
+
+		<!-- Mapping -->
+		<jackson.mapper.asl.version>1.9.13</jackson.mapper.asl.version>
+		<!-- Automated Testing -->
+		<junit.version>4.11</junit.version>
+		<easymock.version>3.1</easymock.version>
+		<powermock.version>1.5.2</powermock.version>
+		<!-- Hibernate/JPA -->		
+		<hibernate.version>5.1.3.Final</hibernate.version>
+		<!-- Databases -->
+		<h2database.version>1.3.173</h2database.version>
+		<oracle.jdbc.driver.version>12.1.0.2</oracle.jdbc.driver.version>
+		<!-- Velocity -->
+		<velocity.version>1.7</velocity.version>
+		<!-- Logging -->
+		<logback.version>1.1.7</logback.version>
+		<!-- DOZER -->
+		<dozer-version>5.3.2</dozer-version>
+		<!-- Joda Time -->
+		<joda.version>2.8.2</joda.version>
+		<joda.hibernate.version>1.3</joda.hibernate.version>
+		<joda.jsptags.version>1.1.1</joda.jsptags.version>
+		<!-- JEXL and Drools -->
+		<apache.jexl.version>2.1.1</apache.jexl.version>
+		<drools.version>5.5.0.Final</drools.version>
+		<jaxb-api.version>2.0</jaxb-api.version>
+		<jaxb-impl.version>2.0.3</jaxb-impl.version>
+		<org.easymock.version>3.1</org.easymock.version>
+		<org.powermock.version>1.5.2</org.powermock.version>
+		<com.amazonaws.version>1.9.0</com.amazonaws.version>
+		<spring.boot.maven.plugin.version>1.4.2.RELEASE</spring.boot.maven.plugin.version>
+		<log4j.version>1.2.16</log4j.version>
+		<commons.lang3.version>3.4</commons.lang3.version>
+		<org.projectlombok.version>1.16.4</org.projectlombok.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+		
+			<!-- Unit Testing -->
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-api-easymock</artifactId>
+				<version>${org.powermock.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-module-junit4</artifactId>
+				<version>${org.powermock.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.easymock</groupId>
+				<artifactId>easymock</artifactId>
+				<version>${org.easymock.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	<build>
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>${maven-checkstyle-plugin}</version>
+				<configuration>
+					<enableRulesSummary>false</enableRulesSummary>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<repositories>
+		<repository>
+			<id>repository.springframework.maven.release</id>
+			<name>Spring Framework Maven Release Repository</name>
+			<url>http://repo.springsource.org/libs-release</url>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>repository.plugin.springsource.release</id>
+			<name>SpringSource Maven Repository</name>
+			<url>http://repo.springsource.org/plugins-release</url>
+		</pluginRepository>
+	</pluginRepositories>
+</project>
+
