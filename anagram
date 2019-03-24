@@ -1,0 +1,43 @@
+package com.java.practice;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class Practice {
+
+	public static void main(String[] args) {
+		 Scanner s = new Scanner(System.in);
+		 int testcase=s.nextInt();
+		 for(int i=0;i<testcase;i++)
+		 {
+		 String str1=s.next();
+		 String str2=s.next();
+		 int str1len1=str1.length();
+		 int str2len2=str2.length();
+		 
+		 if(str1len1<=10000 && str2len2<=10000){
+		List<Character> charList1=str1.chars().mapToObj(c->(char)c).collect(Collectors.toList());
+		Map<Character,Long> list1count1=charList1.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+		List<Character> charList2=str2.chars().mapToObj(c->(char)c).collect(Collectors.toList());
+		Map<Character,Long> list2count2=charList2.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+		Set<Character> charSet1=new HashSet<>(charList1);
+		Set<Character> charSet2=new HashSet<>(charList2);
+		charSet1.retainAll(charSet2);
+		long[]  d=new long[1];
+		charSet1.forEach(c->{long n=Math.min(list1count1.get(c), list2count2.get(c));
+		d[0]+=n;
+		});
+		/*for(Character c:charSet1){
+			d=d+Math.min(list1count1.get(c), list2count2.get(c));
+		}*/
+		System.out.println(str1len1+str2len2-2*d[0]);
+		 }
+	}
+		 s.close();
+}
+}
