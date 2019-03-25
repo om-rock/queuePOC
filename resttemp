@@ -1,0 +1,500 @@
+package com.accaglobal.common.util.proxy;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.accaglobal.common.constants.GlobalConstants;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * Extensible class that acts as a generic proxy to the Exams rest services
+ * 
+ * @author souyava (andy.souyave@accaglobal.com)
+ * @author kumarse (Senthil.Kumar@accaglobal.com)
+ * @since 1.0
+ */
+@Slf4j
+public abstract class RestProxy {
+
+	/**
+	 * Parameter name for pageable sorting
+	 */
+	public static final String SORT_PARAM_NAME = "sort";
+
+	/**
+	 * Parameter name for the property of the pageable sorting
+	 */
+	public static final String SORT_PROPERTY_PARAM_NAME = "property";
+
+	/**
+	 * Parameter name for the direction of the pageable sorting
+	 */
+	public static final String SORT_DIRECTION_PARAM_NAME = "direction";
+
+	@Autowired
+	private RestTemplate restTemplate;
+
+	public <T> ResponseEntity<T> get(Class<T> responseType, Map<String, ?> varsAndParams) {
+		return get(null, responseType, varsAndParams);
+	}
+
+	public <T> ResponseEntity<T> get(Class<T> responseType, Object... uriVariables) {
+		return get(null, responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> get(ParameterizedTypeReference<T> responseType, Map<String, ?> varsAndParams) {
+		return get(null, responseType, varsAndParams);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, Class<T> responseType, Map<String, ?> varsAndParams) {
+		Map<String, String> uriVarMapping = new HashMap<String, String>();
+		return restTemplate.exchange(buildUrlWithParams(contextPath, varsAndParams, uriVarMapping), HttpMethod.GET,
+				null, responseType, uriVarMapping);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, Class<T> responseType, Object... uriVariables) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.GET, createJsonEntity(null), responseType,
+				uriVariables);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, Class<T> responseType, HttpEntity<T> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, httpEntity, responseType);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, ParameterizedTypeReference<T> responseType,
+			HttpEntity<T> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.GET, createJsonEntity(null), responseType,
+				httpEntity);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, ParameterizedTypeReference<T> responseType,
+			Object... uriVariables) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.GET, createJsonEntity(null), responseType,
+				uriVariables);
+	}
+
+	public <T> ResponseEntity<T> get(String contextPath, ParameterizedTypeReference<T> responseType,
+			Map<String, ?> varsAndParams) {
+		Map<String, String> uriVarMapping = new HashMap<String, String>();
+		return restTemplate.exchange(buildUrlWithParams(contextPath, varsAndParams, uriVarMapping), HttpMethod.GET,
+				createJsonEntity(null), responseType, uriVarMapping);
+	}
+
+	public <T> ResponseEntity<T> post(String contextPath, Class<T> responseType, HttpEntity<T> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, httpEntity, responseType);
+	}
+
+	public <T> ResponseEntity<T> delete(String contextPath, Class<T> responseType, HttpEntity<T> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.DELETE, httpEntity, responseType);
+	}
+
+	/* Method name Will be redefined later */
+	public <T, S> ResponseEntity<T> postDocument(String contextPath, Class<T> responseType, HttpEntity<S> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, httpEntity, responseType);
+	}
+
+	public <T> ResponseEntity<T> post(Object requestObject, Class<T> responseType, Map<String, ?> varsAndParams) {
+		return post(null, requestObject, responseType, varsAndParams);
+	}
+
+	public <T> ResponseEntity<T> post(Object requestObject, Class<T> responseType, Object... uriVariables) {
+		return post(null, requestObject, responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> post(Object requestObject, ParameterizedTypeReference<T> responseType,
+			Object... uriVariables) {
+		return post(null, requestObject, responseType, uriVariables);
+	}
+
+
+	public <T> ResponseEntity<T> exchange(String contextPath, ParameterizedTypeReference<T> responseType,
+			HttpEntity<MultiValueMap<String, Object>> httpEntity) {
+		restTemplate.getMessageConverters().add(new FormHttpMessageConverter());
+		restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, httpEntity, responseType);
+	}
+
+	public <T> ResponseEntity<T> post(String contextPath, Object requestObject, Class<T> responseType,
+			Map<String, ?> varsAndParams) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, createJsonEntity(requestObject), responseType, varsAndParams);
+	}
+
+	public <T> ResponseEntity<T> post(String contextPath, Object requestObject,
+			ParameterizedTypeReference<T> responseType, Object... uriVariables) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, createJsonEntity(requestObject),
+				responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> post(String contextPath, Object requestObject, Class<T> responseType,
+			Object... uriVariables) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, createJsonEntity(requestObject),
+				responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> post(Object requestObject, ParameterizedTypeReference<T> responseType,
+			Map<String, ?> varsAndParams) {
+		return post(null, requestObject, responseType, varsAndParams);
+	}
+
+	public <T> ResponseEntity<T> post(String contextPath, Object requestObject,
+			ParameterizedTypeReference<T> responseType, Map<String, ?> varsAndParams) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.POST, createJsonEntity(requestObject),
+				responseType, varsAndParams);
+	}
+
+	public ResponseEntity<?> delete(Object id) {
+		return delete(null, id);
+	}
+
+	public ResponseEntity<?> delete(String contextPath, Object id) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.DELETE, createJsonEntity(null), Object.class, id);
+	}
+
+	public ResponseEntity<?> put(Object... uriVariables) {
+		return put(null, null, Object.class, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> put(Object requestObject, Class<T> responseType, Object... uriVariables) {
+		return put(null, requestObject, responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> put(String contextPath, Object requestObject, Class<T> responseType,
+			Object... uriVariables) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.PUT, createJsonEntity(requestObject),
+				responseType, uriVariables);
+	}
+
+	public <T> ResponseEntity<T> put(String contextPath, Class<T> responseType, HttpEntity<T> httpEntity) {
+		return restTemplate.exchange(getLocation(contextPath), HttpMethod.PUT, httpEntity, responseType);
+	}
+
+	/**
+	 * Returns the current uri context location (e.g. /cars/view/{id}) via the servlet request attributes
+	 */
+	protected String getContextPath() {
+		// return the current context url of the servlet
+		if(RequestContextHolder.getRequestAttributes()!=null){
+			ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+			return (String) sra.getRequest().getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+		}
+		return null;
+	}
+
+	/**
+	 * Build complete url with appended query params and uri template variables filled-in
+	 * 
+	 * @param contextPath The context path of the rest service
+	 * @param varsAndParams The variables and parameters to use when building the url
+	 * @param uriVarMapping The uri variable mapper to populate for the query params during recursion
+	 * @return
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private String buildUrlWithParams(String contextPath, Map<String, ?> varsAndParams,
+			Map<String, String> uriVarMapping) {
+
+		String url = getLocation(contextPath);
+		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
+		ObjectMapper mapper = new ObjectMapper();
+
+		// Add the query parameters to the url
+		for (String uriVarName : varsAndParams.keySet()) {
+
+			// If the name of the parameter is not a uri variable, then process it
+			if (!url.matches("\\{" + uriVarName + "\\}")) {
+
+				Object uriVar = varsAndParams.get(uriVarName);
+				Map objectMap = mapper.convertValue(uriVar, Map.class);
+
+				// If the uri variable is a pageable object, translate the sort parameter into a parseable query
+				if (uriVar instanceof Pageable) {
+					StringBuffer sortString = new StringBuffer();
+					for (Map sortOrder : (List<Map>) objectMap.remove(SORT_PARAM_NAME)) {
+						if (sortString.length() != 0) {
+							sortString.append("&").append(SORT_PARAM_NAME).append("=");
+						}
+						sortString.append(sortOrder.get(SORT_PROPERTY_PARAM_NAME)).append(",")
+								.append(sortOrder.get(SORT_DIRECTION_PARAM_NAME));
+					}
+
+					objectMap.put(SORT_PARAM_NAME, sortString.toString());
+					log.debug("Sort query string for pageable content is: {}", sortString);
+				}
+
+				// recursively look through the object and map all the nested query params
+				uriBuilder.query(serializeQueryParam(objectMap, new String(), uriVarMapping));
+			}
+		}
+
+		// return the built url with uri parameters and query values
+		return uriBuilder.build().toString();
+	}
+
+	/**
+	 * Recursive function that creates query parameters from a Jackson pre-parsed HashMap
+	 * 
+	 * @param object
+	 * @param context
+	 * @return
+	 */
+	@SuppressWarnings("rawtypes")
+	public static String serializeQueryParam(Object object, String context, Map<String, String> uriVarMapping) {
+		StringBuffer contextBuilder = new StringBuffer();
+		if (object instanceof Map) {
+			// if the object is a Map, then append dot notation
+			for (Object key : ((Map) object).keySet()) {
+				Object value = ((Map) object).get(key);
+				if (value != null && key instanceof String) {
+					contextBuilder.append((StringUtils.isEmpty(contextBuilder.toString()) ? "" : "&"));
+					contextBuilder.append(serializeQueryParam(value,
+							(StringUtils.isEmpty(context) ? "" : context + ".") + key, uriVarMapping));
+				}
+			}
+		}
+		else if (object instanceof List) {
+			// if the object is a list, then append array notation with indexes
+			for (Object value : ((List) object)) {
+				int idx = 0;
+				if (value != null) {
+					contextBuilder.append((StringUtils.isEmpty(contextBuilder.toString()) ? "" : "&"));
+					contextBuilder.append(serializeQueryParam(value, StringUtils.isEmpty(context) ? "" : context + "["
+							+ idx++ + "]", uriVarMapping));
+				}
+			}
+		}
+		else {
+			// else return query param as a URI variable (for encoding '&' and '='): 'objectName = {objectName}' field
+			if (object != null) {
+				contextBuilder = new StringBuffer(context + "={" + context + "}");
+				uriVarMapping.put(context, object.toString());
+			}
+		}
+		return contextBuilder.toString();
+	}
+
+	/**
+	 * Create a JSON Http Entity object for the body of the request
+	 * 
+	 * @param requestObject The request object to use
+	 * @return
+	 */
+	private HttpEntity<?> createJsonEntity(Object requestObject) {
+		HttpHeaders headers = new HttpHeaders();
+
+		if(RequestContextHolder.getRequestAttributes()!=null){
+			// Get request object from context to extract the session user info
+			HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+					.getRequest();
+	
+			// Set the userID of the session user in the back-end request header
+			headers.set(GlobalConstants.ACCA_ID, StringUtils.defaultString(request.getHeader(GlobalConstants.ACCA_ID)));
+		}
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		return new HttpEntity<>(requestObject, headers);
+	}
+
+	public abstract String getLocation(String context);
+}
+
+Implementaion Class:
+
+
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Rest proxy implementation for the common restful services
+ * 
+ * @author souyava (andy.souyave@accaglobal.com)
+ * @since 1.0
+ */
+public class CommonRestProxy extends RestProxy {
+
+	private static final String DEFAULT_REST_URL = "http://localhost:8080/commonsvcs/rest";
+
+	private static final String DEFAULT_URL_PROPERTY_NAME = "common.rest.url";
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.accaglobal.common.util.proxy.RestProxy#getLocation()
+	 */
+	@Override
+	public String getLocation(String contextPath) {
+		return StringUtils.defaultString(System.getProperty(DEFAULT_URL_PROPERTY_NAME), DEFAULT_REST_URL)
+				+ StringUtils.defaultString(contextPath, getContextPath());
+	}
+}
+
+calling class:
+
+public class CommonServicesGateway {
+
+	@Autowired
+	private CommonRestProxy commonRestProxy;
+
+	public ExamSessionDTO currentSession() {
+		return commonRestProxy.get("/session/currentSession", new ParameterizedTypeReference<ExamSessionDTO>() {
+		}).getBody();
+	}
+
+	public List<ExamSessionDTO> getAllSessionsForMaintainSessionDates() {
+		return commonRestProxy.get("/session/getAllSessionsForMaintainSessionDatesPostExams",
+				new ParameterizedTypeReference<List<ExamSessionDTO>>() {
+				}).getBody();
+	}
+
+	public List<ExamSessionDTO> getFutureSessions() {
+		return commonRestProxy.get("/session/getFutureSessions",
+				new ParameterizedTypeReference<List<ExamSessionDTO>>() {
+				}).getBody();
+	}
+
+	public List<AcademicPartnerDTO> getAcademicPartners() {
+		
+		return commonRestProxy.get("/academicPartner/getAcademicPartners",
+				new ParameterizedTypeReference<List<AcademicPartnerDTO>>() {
+				}).getBody();
+	}
+
+	public List<ResultConversionJobDTO> getResultConversionJobs(String id) {
+		
+		return commonRestProxy.get("/academicPartner/getResultConversionJobs/" + id,
+				new ParameterizedTypeReference<List<ResultConversionJobDTO>>() {
+				}).getBody();
+	}
+
+	public ResultConverstionRequestDTO submitResultConversionJob(ResultConverstionRequestDTO converstionRequestDTO) {
+		
+		return commonRestProxy.post("/academicPartner/submitResultConversionJob", converstionRequestDTO,
+				new ParameterizedTypeReference<ResultConverstionRequestDTO>() {
+				}).getBody();
+	}
+
+	public List<ExamSessionDTO> getAllSessionsForUol() {
+		
+		return commonRestProxy.get("/session/getAllSessionsForUol",
+				new ParameterizedTypeReference<List<ExamSessionDTO>>() {
+				}).getBody();
+	}
+
+	public void convertResults(ResultConverstionRequestDTO converstionRequestDTO) {
+		
+		commonRestProxy.post("/academicPartner/convertResults", converstionRequestDTO,
+				new ParameterizedTypeReference<List<ResultConverstionRequestDTO>>() {
+				});
+	}
+
+	public void execute(String jobName) {
+		
+		RestTemplate restTemplate = new RestTemplate();
+		restTemplate.getForEntity(System.getProperty("common.rest.url") + "/candidateResponseJob/notification/"
+				+ jobName, String.class);
+	}
+
+	public List<LookupDTO> getRefLookupByType(String code) {
+
+		return commonRestProxy.get("/refServiceDates/getRefLookUpsByType/{lookupType}", 
+				new ParameterizedTypeReference<List<LookupDTO>>() {}, code).getBody();
+	}
+	
+	public List<CountryDTO> getAllCountries() {
+		
+		return commonRestProxy.get("/country/list",
+				new ParameterizedTypeReference<List<CountryDTO>>() {
+				}).getBody();
+	}
+	
+	public List<CustomCentreDTO> getAllCentresByCountryCode(String countryCode) {
+		
+		return commonRestProxy.get("/centre/getAllCentresByCountryCode/{countryCode}",
+				new ParameterizedTypeReference<List<CustomCentreDTO>>() {
+				}, countryCode).getBody();
+	}
+	
+	
+	public List<CustomCentreDTO> getCentres() {
+		
+		return commonRestProxy.get("/centre/getAllCentres",
+				new ParameterizedTypeReference<List<CustomCentreDTO>>() {
+				}).getBody();
+	}
+	
+	public List<AccaQualificationDTO> showQualifications() {
+		
+		ResponseEntity<List<AccaQualificationDTO>> responseEntity = commonRestProxy.get(
+				"/qualification/getAllQualifications",
+				(new ParameterizedTypeReference<List<AccaQualificationDTO>>() {
+				}));
+		return responseEntity.getBody();
+	}
+	
+	public List<ExamSubjectDTO> showExamSubjects() {
+		
+		return commonRestProxy.get("/subject/listExamSubjects",
+				(new ParameterizedTypeReference<List<ExamSubjectDTO>>() {
+				})).getBody();
+	}
+	
+	public List<ExamSubjectVariantDTO> getActiveExamSubjectVariantsBySubjectId(Long examSubjectId) {
+		
+		ExamSubjectVariantDTOListWrapper ExamSubjectVariantDTOListWrapper = commonRestProxy.get("/examSubjectVariant/getActiveExamSubjectVariantsBySubjectId/{subjectId}",
+				(new ParameterizedTypeReference<ExamSubjectVariantDTOListWrapper>() {
+				}), examSubjectId).getBody();
+		
+		return ExamSubjectVariantDTOListWrapper.getListExamSubjectVariants();
+	}
+	
+	
+    public List<ResultDTO> getPrizeWinnerResults(String accaId) {
+		
+			return commonRestProxy.get("/results/getPassesdPrizeWinnerResults/" + accaId,
+					new ParameterizedTypeReference<List<ResultDTO>>() {
+					}).getBody();
+	}
+    
+    public List<ExamSessionDTO> getAllSessions() {
+		return commonRestProxy.get("/session/getAllSessions",
+				new ParameterizedTypeReference<List<ExamSessionDTO>>() {
+				}).getBody();
+	}
+    
+    public List<SessionSubjectDTO> getSessionSubjectsBySessionKey(String sessionKey) {
+		
+		return commonRestProxy.get("/subject/getSessionSubjectsBySessionKey/{sessionKey}",
+				new ParameterizedTypeReference<List<SessionSubjectDTO>>() {
+				}, sessionKey).getBody();
+	}
+    
+    
+	public List<SessionSubjectVariantDTO> getSessionSubjectVariantsBySessionSubjectID(Long sessionSubjectID) {
+			
+		return commonRestProxy.get("/sessionSubjectVariants/findBySessionSubjectID/{sessionSubjectID}",
+				new ParameterizedTypeReference<List<SessionSubjectVariantDTO>>() {
+				}, sessionSubjectID).getBody();
+	}
+
+}
