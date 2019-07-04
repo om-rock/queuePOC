@@ -1,64 +1,107 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.grokonez.activemq</groupId>
-	<artifactId>SpringBootActiveMQ</artifactId>
-	<version>0.0.1</version>
-	<packaging>jar</packaging>
+	<groupId>com.accaglobal.exams.preexams</groupId>
+	<artifactId>acca-preexams-frontend-parent</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Pre-exams front-end parent maven pom</name>
 
-	<name>SpringBootActiveMQ</name>
-	<description>SpringBootActiveMQ</description>
-
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.0.4.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+	<modules>
+		<module>../acca-preexams-web</module>
+		<module>../acca-preexams-frontend-ear</module>
+	</modules>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jms</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-broker</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency><!-- persistence -->
-  <groupId>org.apache.activemq</groupId>
-  <artifactId>activemq-kahadb-store</artifactId>
-</dependency>
-	</dependencies>
 
+		<!-- Java -->
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+
+		<!-- Maven -->
+		<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>
+		<maven.war.plugin.version>2.6</maven.war.plugin.version>
+		<maven.ear.plugin.version>2.8</maven.ear.plugin.version>
+		<maven.jboss.plugin.version>7.5.Final</maven.jboss.plugin.version>
+		
+		<!-- ACCA Common Lib -->
+		<common.lib.version>1.0.3-SNAPSHOT</common.lib.version>
+
+	</properties>
+
+	<!-- Default versions for pre-exams front-end plugins -->
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>${maven.compiler.plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-ear-plugin</artifactId>
+					<version>${maven.ear.plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.jboss.as.plugins</groupId>
+					<artifactId>jboss-as-maven-plugin</artifactId>
+					<version>${maven.jboss.plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>${maven.war.plugin.version}</version>
+				</plugin>
+				<plugin>
+				   <groupId>org.apache.maven.plugins</groupId>
+				   <artifactId>maven-surefire-report-plugin</artifactId>
+				   <version>2.22.0</version>
+				   <configuration>
+				      <aggregate>true</aggregate>
+				      <linkXRef>true</linkXRef>
+				      <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
+				      <description>Unit test case report for Exam Entry application</description>
+				      <outputName>Unit test report</outputName>
+				      <reportsDirectory>${basedir}/target/surefire-reports</reportsDirectory>       
+				      <outputDirectory>${basedir}/target/site/surefire-reports</outputDirectory>       
+				   </configuration>
+				</plugin>
+				<plugin>
+				   <groupId>org.apache.maven.plugins</groupId>
+				   <artifactId>maven-project-info-reports-plugin</artifactId>
+				   <version>2.9</version>
+				   <configuration>
+				      <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
+				      <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+				   </configuration>
+				</plugin>
+								
+			</plugins>
+		</pluginManagement>
 	</build>
 
-
+	<reporting>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jxr-plugin</artifactId>
+            <version>2.3</version>
+         </plugin>
+      </plugins>
+   </reporting>
+	
+	<dependencyManagement>
+		<dependencies>
+			<!-- Import all dependencies from a common centralised location -->
+			<dependency>
+				<groupId>com.accaglobal.exams.preexams</groupId>
+				<artifactId>acca-preexams-lib-parent</artifactId>
+				<version>${common.lib.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
